@@ -3,12 +3,14 @@ package view;
 import controller.TetrisController;
 import model.TetrisModel;
 import observer.Observer;
+import pojo.TetrisScore;
 import pojo.TetrisState;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.util.Iterator;
+import java.util.TreeSet;
+import java.util.Vector;
 
 /**
  * @author jtchen
@@ -21,12 +23,17 @@ public class TetrisView extends JFrame implements Observer {
 	private static final int DEFAULT_X_LOCATION = 500;
 	private static final int DEFAULT_Y_LOCATION = 100;
 	private final TetrisGamePanel tetrisGamePanel;
+	private final TetrisNextCraftPanel nextCraftPanel;
 	private TetrisModel model;
 	private TetrisController controller;
 	private JButton start;
 	private JComboBox<String> box;
+	private JList<String> scores;
+	private JTextField name;
+	private JLabel nowScore;
 
 	public TetrisView() throws HeadlessException {
+		nextCraftPanel = new TetrisNextCraftPanel();
 		tetrisGamePanel = new TetrisGamePanel();
 		defaultSetting();
 		addPanel();
@@ -42,6 +49,7 @@ public class TetrisView extends JFrame implements Observer {
 		model.registerObserver(this);
 		this.model = model;
 		this.tetrisGamePanel.setModel(model);
+		this.nextCraftPanel.setModel(model);
 
 	}
 
@@ -60,24 +68,43 @@ public class TetrisView extends JFrame implements Observer {
 		JPanel tips = new JPanel();
 		JPanel gameSetting = new JPanel();
 		settingPanel.setPreferredSize(new Dimension(200, 600));
-		scoreBoard.setPreferredSize(new Dimension(180, 280));
+		scoreBoard.setPreferredSize(new Dimension(180, 120));
 		difficulty.setPreferredSize(new Dimension(180, 65));
-		gameSetting.setPreferredSize(new Dimension(180, 65));
+		gameSetting.setPreferredSize(new Dimension(180, 140));
 		tips.setPreferredSize(new Dimension(180, 75));
 
 		scoreBoard.setBorder(BorderFactory.createTitledBorder("score board"));
 		difficulty.setBorder(BorderFactory.createTitledBorder("difficulty boxxxx :)"));
 		tips.setBorder(BorderFactory.createTitledBorder("how to play? "));
 
+		nowScore = new JLabel("0");
+		nowScore.setHorizontalAlignment(JLabel.CENTER);
+		nowScore.setBackground(settingPanel.getBackground());
+		nowScore.setPreferredSize(new Dimension(180, 45));
+		nowScore.setBorder(BorderFactory.createTitledBorder("now score? "));
 
+		name = new JTextField();
+		name.setBackground(settingPanel.getBackground());
+		name.setPreferredSize(new Dimension(180, 45));
+		name.setBorder(BorderFactory.createTitledBorder("your name? "));
 		start = new JButton("( •̀ ω •́ )✧start");
 		box = new JComboBox<>(new String[]{"easy", "hard", "please don't do this"});
+
+		scores = new JList<>();
+		scores.setBackground(settingPanel.getBackground());
+		scores.setPreferredSize(new Dimension(160, 80));
+		scores.setEnabled(false);
+		scoreBoard.add(scores);
+
 		difficulty.add(box);
+		gameSetting.add(nowScore);
+		gameSetting.add(name);
 		gameSetting.add(start);
 
 		tips.add(new JLabel("<html>[w,s,a,d] - normal play <br/>[space] - quick fall :)</html>"));
 
 		settingPanel.add(scoreBoard);
+		settingPanel.add(nextCraftPanel);
 		settingPanel.add(difficulty);
 		settingPanel.add(gameSetting);
 		settingPanel.add(tips);
@@ -87,8 +114,26 @@ public class TetrisView extends JFrame implements Observer {
 
 	@Override
 	public void update() {
+
 		TetrisState state = model.getState();
 		start.setEnabled(state != TetrisState.START);
+		name.setEnabled(state != TetrisState.START);
+		if (state == TetrisState.START) nowScore.setText(String.valueOf(model.getNowScore()));
+		else nowScore.setText("0");
+
+		Vector<String> vt = new Vector<>();
+		Iterator<TetrisScore> iterator = model.getHighScores().iterator();
+
+		for (int i = 0; i < 4 && iterator.hasNext(); i++) {
+			TetrisScore score = iterator.next();
+			vt.add("[" + score.getPlayerName() + "] - " + score.getScore());
+		}
+
+		scores.setListData(vt);
+	}
+
+	public String getPlayerName() {
+		return name.getText();
 	}
 
 	public String getDifficulty() {
@@ -97,6 +142,7 @@ public class TetrisView extends JFrame implements Observer {
 
 	public void open() {
 		setVisible(true);
+		model.notifyObserver();
 		setRequestFocus();
 	}
 

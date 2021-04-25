@@ -16,7 +16,7 @@ public class TetrisConfig {
 
 	@Bean
 	public TetrisModel tetrisModel() {
-		return new TetrisModel(10, 20);
+		return new TetrisModel(10, 20, true);
 	}
 
 	@Bean

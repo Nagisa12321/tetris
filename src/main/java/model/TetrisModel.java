@@ -6,12 +6,11 @@ import observer.Observable;
 import observer.Observer;
 import pojo.TetrisCraftPoint;
 import pojo.TetrisLine;
+import pojo.TetrisScore;
 import pojo.TetrisState;
+import utils.TetrisDataUtil;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author jtchen
@@ -27,15 +26,27 @@ public class TetrisModel implements Observable {
 	private TetrisCraft tetrisCraft;
 	private TetrisCraft nextCraft;
 	private final List<Observer> observers;
+	private final TreeSet<TetrisScore> highScores;
+	private final boolean load; // 是否从数据库加载
+	private int nowScore;
 
 
-	public TetrisModel(int x, int y) {
+	public TetrisModel(int x, int y, boolean load) {
 		this.observers = new ArrayList<>();
 		this.state = TetrisState.NOT_START;
 		this.lines = new ArrayList<>();
 		this.width = x;
 		this.height = y;
 		this.nextCraft = randomCraft();
+		this.highScores = new TreeSet<>((o1, o2) -> o2.getScore() - o1.getScore());
+		this.load = load;
+		this.nowScore = 0;
+
+		if (load) {
+			// 从数据库里边拿出成绩
+			List<TetrisScore> scores = TetrisDataUtil.getScores();
+			highScores.addAll(scores);
+		}
 
 		checkLines();
 	}
@@ -68,6 +79,14 @@ public class TetrisModel implements Observable {
 		return lines.get(idx);
 	}
 
+	public TreeSet<TetrisScore> getHighScores() {
+		return highScores;
+	}
+
+	public void addScore(TetrisScore score) {
+		highScores.add(score);
+		notifyObserver();
+	}
 
 	private void coverLines() {
 		int coverLines = height - lines.size();
@@ -77,17 +96,39 @@ public class TetrisModel implements Observable {
 		notifyObserver();
 	}
 
-	private void checkLines() {
-		lines.removeIf(TetrisLine::isFull);
-		// TODO: 2021/4/24 添加算分操作
+	public TetrisCraft getNextCraft() {
+		return nextCraft;
+	}
 
-		// ...
+	private void checkLines() {
+		int removeLines = 0;
+		Iterator<TetrisLine> iterator = lines.iterator();
+		while (iterator.hasNext()) {
+			TetrisLine line = iterator.next();
+			if (line.isFull()) {
+				iterator.remove();
+				removeLines++;
+			}
+		}
+		// TODO: 2021/4/24 添加算分操作
+		/*
+			1.消除1行得10分，因为单行消除时最简单的，分数高不到哪去。
+			2.消除2行得30分，分数开始激增了，30分还不错。
+			3.消除3行得60分，分数更高，但是难度也是随之增加。
+			4.消除4行得100分，用这个来打高分是最快的，但是一不小心就可能挂掉。
+		 */
+		if (removeLines == 1) nowScore += 10;
+		else if (removeLines == 2) nowScore += 30;
+		else if (removeLines == 3) nowScore += 60;
+		else if (removeLines == 4) nowScore += 100;
+		else nowScore += 5;
+
 		coverLines();
 		notifyObserver();
-
 	}
 
 	public void init() {
+		this.nowScore = 0;
 		lines.clear();
 		checkLines();
 
@@ -169,5 +210,13 @@ public class TetrisModel implements Observable {
 	@Override
 	public void registerObserver(Observer observer) {
 		this.observers.add(observer);
+	}
+
+	public int getNowScore() {
+		return nowScore;
+	}
+
+	public boolean isLoad() {
+		return load;
 	}
 }

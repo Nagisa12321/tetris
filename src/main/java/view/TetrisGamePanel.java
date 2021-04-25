@@ -10,7 +10,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Collection;
@@ -30,7 +29,6 @@ public class TetrisGamePanel extends JPanel implements Observer {
 	private TetrisController controller;
 	private int theX;
 	private int theY;
-
 
 
 	public TetrisGamePanel() {
@@ -111,20 +109,20 @@ public class TetrisGamePanel extends JPanel implements Observer {
 
 	}
 
-	public void setTheX(int theX) {
-		this.theX = theX;
-	}
-
-	public void setTheY(int theY) {
-		this.theY = theY;
-	}
-
 	public int getTheX() {
 		return theX;
 	}
 
+	public void setTheX(int theX) {
+		this.theX = theX;
+	}
+
 	public int getTheY() {
 		return theY;
+	}
+
+	public void setTheY(int theY) {
+		this.theY = theY;
 	}
 
 	private void drawFlyingCraft(Graphics2D g2d, int x, int y) {

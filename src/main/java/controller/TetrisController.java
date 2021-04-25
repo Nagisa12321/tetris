@@ -4,7 +4,9 @@ import craft.TetrisCraft;
 import model.TetrisModel;
 import pojo.TetrisCraftPoint;
 import pojo.TetrisMovingDirection;
+import pojo.TetrisScore;
 import pojo.TetrisState;
+import utils.TetrisDataUtil;
 import view.TetrisView;
 
 import java.util.List;
@@ -33,6 +35,8 @@ public class TetrisController {
 		TetrisState state = model.getState();
 		if (state == TetrisState.START) {
 			view.openMessage("you just have started, and you are in the game, why start again?");
+		} else if (view.getPlayerName().equals("")) {
+			view.openMessage("please input your name");
 		} else {
 			String difficulty = view.getDifficulty();
 			if (difficulty == null) {
@@ -40,7 +44,7 @@ public class TetrisController {
 				return;
 			}
 			if (difficulty.equals("easy")) this.pusher = new TetrisPusher(this, 600);
-			else if (difficulty.equals("hard")) this.pusher = new TetrisPusher(this, 200);
+			else if (difficulty.equals("hard")) this.pusher = new TetrisPusher(this, 80);
 			else this.pusher = new TetrisPusher(this, -1);
 			this.effects = new TetrisSpecialEffects(view.getTetrisGamePanel());
 			new Thread(pusher).start();
@@ -58,7 +62,8 @@ public class TetrisController {
 			return;
 		}
 		TetrisCraft tetrisCraft = model.getTetrisCraft();
-		while (tetrisCraft.move(TetrisMovingDirection.DOWN)) { }
+		while (tetrisCraft.move(TetrisMovingDirection.DOWN)) {
+		}
 		effects.shake();
 		addPoints(tetrisCraft);
 
@@ -71,6 +76,13 @@ public class TetrisController {
 
 		if (model.gameOver()) {
 			model.setState(TetrisState.OVER);
+
+			TetrisScore tetrisScore = new TetrisScore(model.getNowScore(), view.getPlayerName());
+			if (model.isLoad()) {
+				TetrisDataUtil.addScore(tetrisScore);
+			}
+			model.addScore(tetrisScore);
+
 			pusher.stop();
 			effects.stop();
 			view.openMessage("game over!");
